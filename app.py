@@ -90,8 +90,7 @@ class TechnicalInfo():
 
         if(([x for x in self.txt if 'dkim' in x])):
             self.dkim = 'False'
-      #  return
-    #    print(requests.get("https://geolocation-db.com/json/"+self.ip[0]+"&position=true").json())
+
         self.country = requests.get("https://geolocation-db.com/json/"+self.ip[0]+"&position=true").json()['country_name']
     #    self.certs = requests.get("https://crt.sh/json?Identity="+self.netloc).json()
 
