@@ -1,26 +1,22 @@
-FROM alpine:latest
-RUN apk update && apk add bind-tools
-RUN apk add --no-cache gcc libc-dev linux-headers
-RUN apk update
-RUN apk add py-pip
-RUN apk add --no-cache python3-dev 
+FROM ubuntu:20.04
+RUN apt-get update                           && \
+    apt-get upgrade -y                       && \
+    apt-get install -y python3               && \
+    apt-get install -y python3-pip           && \
+    DEBIAN_FRONTEND="noninteractive"   apt-get install -y uwsgi                && \
+    apt-get install -y uwsgi-plugin-python3  && \
+    apt install dnsutils
 
-ARG USER=app
-ENV HOME /home/$USER
+# The DEBIAN_FRONTEND config needed for tzdata installation
 
-# install sudo as root
-RUN apk add --update sudo
+COPY requirements.txt .
+RUN pip3 install -r requirements.txt
+RUN rm -f requirements.txt
 
-# add new user
-RUN adduser -D $USER \
-        && echo "$USER ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/$USER \
-        && chmod 0440 /etc/sudoers.d/$USER
 
-USER $USER
-RUN pip3 install --upgrade pip
-RUN pip3 install uwsgi
+COPY . /opt/
+COPY uwsgi.ini /etc/uwsgi/apps-enabled/
 
-WORKDIR /app
-COPY . /app
-RUN pip3 --no-cache-dir install -r requirements.txt
-CMD [ "uwsgi", "--ini", "uwsgi.ini"]
+WORKDIR /opt
+
+CMD service uwsgi start; tail -F /var/log/uwsgi/app/uwsgi.log
