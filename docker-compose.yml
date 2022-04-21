@@ -1,0 +1,34 @@
+version: '3.8'
+
+services:
+
+  web:
+    build: .
+    image: web
+    container_name: web
+    ports:
+      - 5004:5000
+      - 5005:5001
+    command: bash start.sh
+    user: app
+    volumes:
+      - .:/usr/src/app
+    environment:
+      - APP_SETTINGS=config.BaseConfig
+    depends_on:
+      - redis
+
+  worker:
+    image: web
+    command: python manage.py run_worker
+    volumes:
+      - .:/usr/src/app
+    environment:
+      - APP_SETTINGS=config.BaseConfig
+    depends_on:
+      - redis
+
+  redis:
+    image: redis:6.2-alpine
+
+

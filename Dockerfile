@@ -1,22 +1,26 @@
-FROM ubuntu:20.04
-RUN apt-get update                           && \
-    apt-get upgrade -y                       && \
-    apt-get install -y python3               && \
-    apt-get install -y python3-pip           && \
-    DEBIAN_FRONTEND="noninteractive"   apt-get install -y uwsgi                && \
-    apt-get install -y uwsgi-plugin-python3  && \
-    apt install dnsutils
+# base image
+FROM python:3.8
+RUN apt-get update && \
+    apt-get install -y uwsgi && \    
+    apt-get install -y  dnsutils && \
+    apt-get install -y  redis-server 
+ #&&    apt-get install -y uwsgi-plugin-python3
+RUN apt-get install -y uwsgi-plugin-python3
+RUN export PYTHON=python3.8
+#RUN uwsgi --build-plugin "/usr/src/uwsgi/plugins/python python38"
+    # set working directory
+RUN mkdir -p /usr/src/app
+WORKDIR /usr/src/app
+#RUN pip install uwsgi
+# add requirements (to leverage Docker cache)
+ADD ./requirements.txt /usr/src/app/requirements.txt
 
-# The DEBIAN_FRONTEND config needed for tzdata installation
+# install requirements
+RUN useradd -ms /bin/bash app
+USER app
+RUN python3 -m pip install -r requirements.txt
 
-COPY requirements.txt .
-RUN pip3 install -r requirements.txt
-RUN rm -f requirements.txt
-
-
-COPY . /opt/
+# copy project
+COPY . /usr/src/app
 COPY uwsgi.ini /etc/uwsgi/apps-enabled/
 
-WORKDIR /opt
-
-CMD service uwsgi start; tail -F /var/log/uwsgi/app/uwsgi.log
