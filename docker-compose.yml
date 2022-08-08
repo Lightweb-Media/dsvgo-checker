@@ -3,11 +3,11 @@ version: '3.8'
 services:
 
   web:
-    build: .
-    image: web
+    build: ./
+ #   image: web
     container_name: web
     ports:
-      - 5004:5000
+      - 5000:5000
       - 5005:5001
     command: bash start.sh
     user: app
@@ -19,7 +19,8 @@ services:
       - redis
 
   worker:
-    image: web
+#    image: web
+    build: ./
     command: python manage.py run_worker
     volumes:
       - .:/usr/src/app

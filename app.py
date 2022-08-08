@@ -39,6 +39,7 @@ app = create_app()
 @main_blueprint.route("/tasks", methods=["POST"])
 def run_task():
     task_type = request.form["domain"]
+
     with Connection(redis.from_url(current_app.config["REDIS_URL"])):
         q = Queue()
         task = q.enqueue(create_task, task_type)
