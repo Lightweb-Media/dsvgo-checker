@@ -73,12 +73,12 @@ class Browser():
         page['screenshots'] = await self.page.cookies()
         page['requests'] =self.requests_url
 
-        await self.page.setViewport(self.mobil)
-        await self.page.screenshot({'path': 'mobil.png'})
-        await self.page.setViewport(self.tablet)
-        await self.page.screenshot({'path': 'tablet.png'})
-        await self.page.setViewport(self.desktop)
-        await self.page.screenshot({'path': 'desktop.png'})    
+     #   await self.page.setViewport(self.mobil)
+      #  await self.page.screenshot({'path': 'mobil.png'})
+     #   await self.page.setViewport(self.tablet)
+     #   await self.page.screenshot({'path': 'tablet.png'})
+     #   await self.page.setViewport(self.desktop)
+     #   await self.page.screenshot({'path': 'desktop.png'})    
         return page       
 
 

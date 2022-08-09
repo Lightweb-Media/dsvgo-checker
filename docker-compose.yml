@@ -4,7 +4,7 @@ services:
 
   web:
     build: ./
- #   image: web
+    image: web
     container_name: web
     ports:
       - 5000:5000
@@ -19,7 +19,7 @@ services:
       - redis
 
   worker:
-#    image: web
+    image: web
     build: ./
     command: python manage.py run_worker
     volumes:
@@ -32,4 +32,8 @@ services:
   redis:
     image: redis:6.2-alpine
 
-
+networks:
+  default:
+    # Use a custom driver
+    driver: bridge
+                    
