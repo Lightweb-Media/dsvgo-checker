@@ -24,6 +24,7 @@ services:
     command: python manage.py run_worker
     volumes:
       - .:/usr/src/app
+      - ./logs/:/tmp/
     environment:
       - APP_SETTINGS=config.BaseConfig
     depends_on:
