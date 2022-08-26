@@ -41,30 +41,33 @@ def create_app(script_info=None):
 app = create_app()
 
 api = Api(
-    app, version='1.0', title='DSVGO Checker API',
-    description='A simple TodoMVC API',
+    app, 
+    version='v1', 
+    title='DSVGO Checker API',
+    description='DSVGO Checker API',
+    default_label='DSVGO Checker',
+    default = 'dsvgo-checker'
 )
-#api.init_app(app)
 
-#model = api.model('Model', {
-#    'domain': fields.String, 
-#})
-#ns = api.namespace('api', description='dsvgo operations')
+my_model = api.model('RunTasks', {
+    'domain': fields.String(description='domain', required=True)
+})
 
+class Body(fields.Raw):
+    def format(self, value):
+        return {'domain': value.domain}
 
-
-@api.route("/tasks")
+@api.route("/tasks", endpoint='tasks')
 class RunTasks(Resource):
+    @api.doc(model=my_model, body=Body)
     def post(self):
-    # Default to 200 OK
         content_type = request.headers.get('Content-Type')
         if (content_type == 'application/json'):
             data = request.json
 
         else:
             return 'Content-Type not supported!'
-        
-        
+
         if data:
             with Connection(redis.from_url(current_app.config["REDIS_URL"])):
                 q = Queue()
@@ -76,17 +79,10 @@ class RunTasks(Resource):
                 }
             }
             return response_object
- #   @api.marshal_with(model, envelope='resource')
- #   @ns.doc('list_todos')
- #   @ns.marshal_list_with(api)
-   
 
-
-
-
-#@main_blueprint.route("/tasks/<task_id>", methods=["GET"])
-@api.route("/tasks/<string:task_id>")
+@api.route("/tasks/<string:task_id>", endpoint='tasks/task_id')
 class GetTaskID(Resource):
+    
     def get(self,task_id):
         with Connection(redis.from_url(current_app.config["REDIS_URL"])):
             q = Queue()
