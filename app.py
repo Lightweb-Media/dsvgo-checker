@@ -8,8 +8,11 @@ from rq import Connection, Worker
 import os
 from tasks import create_task
 from rq import Queue, Connection
-from flask import Blueprint, jsonify, request, current_app
-main_blueprint = Blueprint("main", __name__,)
+#from flask import Blueprint, jsonify, request, current_app
+from flask_restx import Resource, Api, fields
+
+
+#main_blueprint = Blueprint("main", __name__,)
 def create_app(script_info=None):
 
     # instantiate the app
@@ -25,9 +28,9 @@ def create_app(script_info=None):
    
 
     # register blueprints
-    from app import main_blueprint
+   # from app import main_blueprint
 
-    app.register_blueprint(main_blueprint)
+   # app.register_blueprint(main_blueprint)
 
     # shell context for flask cli
     app.shell_context_processor({"app": app})
@@ -36,25 +39,43 @@ def create_app(script_info=None):
 
 app = create_app()
 
-@main_blueprint.route("/tasks", methods=["POST"])
-def run_task():
-    task_type = request.form["domain"]
+api = Api(
+    app, version='1.0', title='TodoMVC API',
+    description='A simple TodoMVC API',
+)
+api.init_app(app)
+model = api.model('Model', {
+    'domain': fields.String,
+  
+})
+ns = api.namespace('api', description='TODO operations')
+@api.route("/<string:tasks>'",endpoint='tasks')
+@api.doc(body={'domain': 'An domain'})
 
-    with Connection(redis.from_url(current_app.config["REDIS_URL"])):
-        q = Queue()
-        task = q.enqueue(create_task, task_type)
-    response_object = {
-        "status": "success",
-        "data": {
-            "task_id": task.get_id()
+
+class RunTasks(Resource):
+    @api.marshal_with(model, envelope='resource')
+    @ns.doc('list_todos')
+    @ns.marshal_list_with(api)
+    def run_task(self):
+        # Default to 200 OK
+        task_type = Flask.request.form["domain"]
+
+        with Connection(redis.from_url(Flask.current_app.config["REDIS_URL"])):
+            q = Queue()
+            task = q.enqueue(create_task, task_type)
+        response_object = {
+            "status": "success",
+            "data": {
+                "task_id": task.get_id()
+            }
         }
-    }
-    return jsonify(response_object)
+        return response_object
 
 
-@main_blueprint.route("/tasks/<task_id>", methods=["GET"])
+#@main_blueprint.route("/tasks/<task_id>", methods=["GET"])
 def get_status(task_id):
-    with Connection(redis.from_url(current_app.config["REDIS_URL"])):
+    with Connection(redis.from_url(Flask.current_app.config["REDIS_URL"])):
         q = Queue()
         task = q.fetch_job(task_id)
     if task:
@@ -68,7 +89,7 @@ def get_status(task_id):
         }
     else:
         response_object = {"status": "error"}
-    return jsonify(response_object)
+    return Flask.jsonify(response_object)
 
 application = app
 
