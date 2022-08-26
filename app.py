@@ -2,7 +2,7 @@ import redis
 import os
 import redis
 
-from flask import Flask
+from flask import Blueprint, Flask, request, current_app
 from flask.cli import FlaskGroup
 from rq import Connection, Worker
 import os
@@ -19,10 +19,11 @@ def create_app(script_info=None):
     app = Flask(
         __name__
     )
-
+    app.config['REDIS_URL'] = 'redis://redis:6379/0'
+    app.config['QUEUES'] = "default"
     # set config
-    app_settings = os.getenv("APP_SETTINGS")
-    app.config.from_object(app_settings)
+ #   app_settings = os.getenv("APP_SETTINGS")
+ #   app.config.from_object(app_settings)
 
     # set up extensions
    
@@ -40,59 +41,72 @@ def create_app(script_info=None):
 app = create_app()
 
 api = Api(
-    app, version='1.0', title='TodoMVC API',
+    app, version='1.0', title='DSVGO Checker API',
     description='A simple TodoMVC API',
 )
-api.init_app(app)
-model = api.model('Model', {
-    'domain': fields.String,
-  
-})
-ns = api.namespace('api', description='TODO operations')
-@api.route("/<string:tasks>'",endpoint='tasks')
-@api.doc(body={'domain': 'An domain'})
+#api.init_app(app)
+
+#model = api.model('Model', {
+#    'domain': fields.String, 
+#})
+#ns = api.namespace('api', description='dsvgo operations')
 
 
+
+@api.route("/tasks")
 class RunTasks(Resource):
-    @api.marshal_with(model, envelope='resource')
-    @ns.doc('list_todos')
-    @ns.marshal_list_with(api)
-    def run_task(self):
-        # Default to 200 OK
-        task_type = Flask.request.form["domain"]
+    def post(self):
+    # Default to 200 OK
+        content_type = request.headers.get('Content-Type')
+        if (content_type == 'application/json'):
+            data = request.json
 
-        with Connection(redis.from_url(Flask.current_app.config["REDIS_URL"])):
-            q = Queue()
-            task = q.enqueue(create_task, task_type)
-        response_object = {
-            "status": "success",
-            "data": {
-                "task_id": task.get_id()
+        else:
+            return 'Content-Type not supported!'
+        
+        
+        if data:
+            with Connection(redis.from_url(current_app.config["REDIS_URL"])):
+                q = Queue()
+                task = q.enqueue(create_task, data)
+            response_object = {
+                "status": "success",
+                "data": {
+                    "task_id": task.get_id()
+                }
             }
-        }
-        return response_object
+            return response_object
+ #   @api.marshal_with(model, envelope='resource')
+ #   @ns.doc('list_todos')
+ #   @ns.marshal_list_with(api)
+   
+
+
 
 
 #@main_blueprint.route("/tasks/<task_id>", methods=["GET"])
-def get_status(task_id):
-    with Connection(redis.from_url(Flask.current_app.config["REDIS_URL"])):
-        q = Queue()
-        task = q.fetch_job(task_id)
-    if task:
-        response_object = {
-            "status": "success",
-            "data": {
-                "task_id": task.get_id(),
-                "task_status": task.get_status(),
-                "task_result": task.result,
-            },
-        }
-    else:
-        response_object = {"status": "error"}
-    return Flask.jsonify(response_object)
+@api.route("/tasks/<string:task_id>")
+class GetTaskID(Resource):
+    def get(self,task_id):
+        with Connection(redis.from_url(current_app.config["REDIS_URL"])):
+            q = Queue()
+            task = q.fetch_job(task_id)
+        if task:
+            response_object = {
+                "status": "success",
+                "data": {
+                    "task_id": task.get_id(),
+                    "task_status": task.get_status(),
+                    "task_result": task.result,
+                },
+            }
+        else:
+            response_object = {"status": "error"}
+        return response_object
 
 application = app
-
+if __name__ == '__main__':
+    app.run(debug=True)
         
 
 

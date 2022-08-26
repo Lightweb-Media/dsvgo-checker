@@ -5,7 +5,7 @@
 import os
 import redis
 
-from flask import Flask
+from flask import Flask, request, current_app
 from flask.cli import FlaskGroup
 from rq import Connection, Worker
 
@@ -18,15 +18,17 @@ def create_app(script_info=None):
 
     # set config
     app_settings = os.getenv("APP_SETTINGS")
-    app.config.from_object(app_settings)
+    app.config['REDIS_URL'] = 'redis://redis:6379/0'
+    app.config['QUEUES'] = "default"
+  #  app.config.from_object(app_settings)
 
     # set up extensions
    
 
     # register blueprints
- #   from app import main_blueprint
+   # from app import main_blueprint
 
-#    app.register_blueprint(main_blueprint)
+    #app.register_blueprint(main_blueprint)
 
     # shell context for flask cli
     app.shell_context_processor({"app": app})
